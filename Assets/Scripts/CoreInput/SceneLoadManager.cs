@@ -1,7 +1,7 @@
 using UnityEngine.SceneManagement;
-using Snake.Enum;
+using Snake2D.Enum;
 
-namespace Snake.SceneLoad
+namespace Snake2D.SceneLoad
 {
     public static class SceneLoadManager
     {

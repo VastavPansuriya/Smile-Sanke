@@ -1,8 +1,8 @@
 using UnityEngine;
-using Snake.Enum;
-using Snake.SceneLoad;
+using Snake2D.Enum;
+using Snake2D.SceneLoad;
 
-namespace Snake.Player.GameOver
+namespace Snake2D.Player.GameOver
 {
 
     public class GameOverManager : MonoBehaviour

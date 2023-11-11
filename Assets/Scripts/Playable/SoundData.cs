@@ -1,5 +1,5 @@
 using UnityEngine;
-using Snake.Enum;
+using Snake2D.Enum;
 
 [System.Serializable]
 public class SoundData<T>

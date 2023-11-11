@@ -1,21 +1,25 @@
-using Snake.Player.ScoreItem;
+using Snake2D.Enum;
+using Snake2D.Player.GameOver;
+using Snake2D.Player.ScoreItem;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Snake.Enum;
-using Snake.Player.GameOver;
-using System;
 
-namespace Snake.Player
+namespace Snake2D.Player
 {
     public class Snake : MonoBehaviour
     {
-        public static Action OnGrabFood;
+        public static Action<int> OnGrabFood;
 
         [SerializeField] private Transform bodyPf;
 
         [SerializeField] private Gradient gradient;
 
         [SerializeField] private BoxCollider2D bounds;
+
+        private float moveTimer = 0f;
+        [SerializeField] private float moveInterval = 0.1f;
+        [SerializeField] private float moveIntervalSpeedUp = 0.1f;
 
         private Vector2 moveDir = Vector2.right;
 
@@ -25,11 +29,23 @@ namespace Snake.Player
 
         protected bool isLoss;
 
+        //----------------------------------------------Boost
+        [HideInInspector] public bool isScoreBoost;
+
+        [HideInInspector] public bool isSpeedUp;
+
+        [HideInInspector] public bool isShield = false;
+
+        [SerializeField] private FoodPower foodPower;
+
         private void Start()
         {
+            isShield = false;
+
             parts.Add(transform);
             partsSprites.Add(GetComponent<SpriteRenderer>());
-            UpdateColor();
+            UpdateSnakeColor();
+
         }
 
         public void Update()
@@ -39,19 +55,20 @@ namespace Snake.Player
                 return;
             }
             MovementInput();
-        }
 
-        private void FixedUpdate()
-        {
-            if (isLoss)
+
+            moveTimer += Time.deltaTime;
+            float speed = isSpeedUp ? moveIntervalSpeedUp : moveInterval;
+            if (moveTimer >= speed)
             {
-                return;
+                PartsMovement();
+
+                HeadMovement();
+
+                IfDead();
+
+                moveTimer = 0f; // Reset the timer after moving
             }
-            PartsMovement();
-
-            Movement();
-
-            IfDead();
         }
 
         private void PartsMovement()
@@ -62,13 +79,24 @@ namespace Snake.Player
             }
         }
 
-        private void Movement()
+        private void HeadMovement()
         {
             Vector3 movement = new Vector3(Mathf.Round(transform.position.x) + moveDir.x, Mathf.Round(transform.position.y) + moveDir.y);
 
             transform.position = movement;
 
             WrapScreen();
+        }
+
+        private void UpdateSnakeColor()
+        {
+            for (int i = 0; i < partsSprites.Count; i++)
+            {
+                // Calculate the normalized index of this part in the list
+                float normalizedIndex = (float)i / (float)partsSprites.Count;
+                // Get the color from the gradient using the normalized index
+                partsSprites[i].color = gradient.Evaluate(normalizedIndex);
+            }
         }
 
         public void IfDead()
@@ -84,6 +112,12 @@ namespace Snake.Player
 
         public bool CheckDead()
         {
+            if (isShield)
+            {
+                Debug.Log("EveryTime");
+                return false;
+            }
+
             for (int i = 1; i < parts.Count; i++)
             {
                 if (transform.position == parts[i].position)
@@ -116,12 +150,34 @@ namespace Snake.Player
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.TryGetComponent(out Food food))
+            if (other.TryGetComponent(out FoodPlace food))
             {
-                OnGrabFood?.Invoke();
+                OnGrabFood?.Invoke(isScoreBoost ? 2 : 1);
                 AudioManager.Instance.PlayEffect(SoundType.Food);
-                food.RandomizePosition();
+                food.RandomizePosition(food.transform);
                 AddPart();
+            }
+
+            if (other.CompareTag("Power"))
+            {
+                FoodPower.OnStartSlider?.Invoke(foodPower);
+                AudioManager.Instance.PlayEffect(SoundType.Food);
+                switch (foodPower.power)
+                {
+                    case Power.Score:
+                        isScoreBoost = true;
+                        break;
+                    case Power.Speed:
+                        isSpeedUp = true;
+                        break;
+                    case Power.Shield:
+                        isShield = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                StartCoroutine(foodPower.SpawnPower());
             }
         }
 
@@ -139,25 +195,18 @@ namespace Snake.Player
                 }
             }
 
+            ManageSprite(item);
+        }
+
+        private void ManageSprite(Transform item)
+        {
             SpriteRenderer sprite = item.GetComponent<SpriteRenderer>();
 
             partsSprites.Add(sprite);
 
             sprite.sortingOrder = -parts.Count;
 
-            UpdateColor();
-        }
-
-        private void UpdateColor()
-        {
-            for (int i = 0; i < partsSprites.Count; i++)
-            {
-                // Calculate the normalized index of this part in the list
-                float normalizedIndex = (float)i / (float)partsSprites.Count;
-
-                // Get the color from the gradient using the normalized index
-                partsSprites[i].color = gradient.Evaluate(normalizedIndex);
-            }
+            UpdateSnakeColor();
         }
 
         private void WrapScreen()
@@ -174,7 +223,6 @@ namespace Snake.Player
 
             }
 
-
             if (transform.position.x < bounds.bounds.min.x)
             {
                 transform.position = new Vector3(bounds.bounds.max.x, transform.position.y);
@@ -187,6 +235,13 @@ namespace Snake.Player
             }
 
         }
-
+        public void TurnOffPower()
+        {
+            isShield = false;
+            isScoreBoost = false;
+            isSpeedUp = false;
+        }
     }
+
+
 }

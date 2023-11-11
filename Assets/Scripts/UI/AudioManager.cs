@@ -1,4 +1,4 @@
-using Snake.Enum;
+using Snake2D.Enum;
 using System;
 using UnityEngine;
 

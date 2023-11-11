@@ -14,7 +14,7 @@ public class UIScore : MonoBehaviour
 
     private void OnEnable()
     {
-        Snake.Player.Snake.OnGrabFood += SetScore;
+        Snake2D.Player.Snake.OnGrabFood += SetScore;
     }
 
     private int HighScore
@@ -34,9 +34,9 @@ public class UIScore : MonoBehaviour
         SetText();
     }
 
-    public void SetScore()
+    public void SetScore(int value)
     {
-        score++;
+        score += value;
         if (score >= HighScore)
         {
             HighScore = score;
@@ -52,6 +52,6 @@ public class UIScore : MonoBehaviour
 
     private void OnDisable()
     {
-        Snake.Player.Snake.OnGrabFood -= SetScore;
+        Snake2D.Player.Snake.OnGrabFood -= SetScore;
     }
 }

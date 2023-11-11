@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Snake.Enum
+namespace Snake2D.Enum
 {
     public enum LoadScene
     {
